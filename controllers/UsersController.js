@@ -20,12 +20,11 @@ class UsersController {
       res.status(400).json({ error: 'Already exist' });
       return;
     }
-
     const newUser = { email, password: sha1(password) };
 
     const result = await dbClient.db.collection('users').insertOne(newUser);
 
-    res.status(201).json({ id: result.insertedId, username: newUser.email });
+    res.status(201).json({ id: result.insertedId.toString(), username: newUser.email });
   }
 }
 
