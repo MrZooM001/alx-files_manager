@@ -7,8 +7,13 @@
 * **2. First API**
     * [Express Server](server.js)
     * [Routes](routes/index.js)
-    * [Controller](controllers/AppController.js)
+    * [App Controller](controllers/AppController.js)
 * **3. Create a new user**
     * [Utility](utils/)
     * [Routes](routes/index.js)
-    * [Controller](controllers/AppController.js)
+    * [Users Controller](controllers/UsersController.js)
+* **4. Authenticate a user**
+    * [Utility](utils/)
+    * [Routes](routes/index.js)
+    * [Users Controller](controllers/UsersController.js)
+    * [Auth Controller](controllers/AuthController.js)
