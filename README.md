@@ -4,3 +4,11 @@
 ## ***Tasks***
 * **[0. Redis utils](utils/redis.js)**
 * **[1. MongoDB utils](utils/db.js)**
+* **2. First API**
+    * [Express Server](server.js)
+    * [Routes](routes/index.js)
+    * [Controller](controllers/AppController.js)
+* **3. Create a new user**
+    * [Utility](utils/)
+    * [Routes](routes/index.js)
+    * [Controller](controllers/AppController.js)
