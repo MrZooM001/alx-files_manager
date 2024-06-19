@@ -197,8 +197,12 @@ class FilesController {
       return;
     }
 
+    const { id } = req.params;
+    const newVal = { $set: { isPublic: true } };
+    const options = { returnOriginal: false };
+
     const parentFolder = await dbClient.db.collection('files')
-      .findOne({ _id: new ObjectId(parentId), userId: user._id });
+      .findOne({ _id: new ObjectId(id), userId: user._id });
     if (!parentFolder) {
       res.status(400).json({ error: 'Parent not found' });
       return;
@@ -209,11 +213,11 @@ class FilesController {
       return;
     }
 
-    const { id } = req.params;
-    const newVal = { $set: { isPublic: true } };
-    const options = { returnOriginal: false };
     await dbClient.db.collection('files')
-      .findOneAndUpdate({ _id: new ObjectId(id), userId: user._id }, newVal, options, (err, file) => {
+      .findOneAndUpdate({
+        _id: new ObjectId(id),
+        userId: user._id,
+      }, newVal, options, (err, file) => {
         if (!file.lastErrorObject.updatedExisting) {
           res.status(404).json({ error: 'Not found' });
         }
@@ -243,8 +247,12 @@ class FilesController {
       return;
     }
 
+    const { id } = req.params;
+    const newVal = { $set: { isPublic: false } };
+    const options = { returnOriginal: false };
+
     const parentFolder = await dbClient.db.collection('files')
-      .findOne({ _id: new ObjectId(parentId), userId: user._id });
+      .findOne({ _id: new ObjectId(id), userId: user._id });
     if (!parentFolder) {
       res.status(400).json({ error: 'Parent not found' });
       return;
@@ -255,11 +263,11 @@ class FilesController {
       return;
     }
 
-    const { id } = req.params;
-    const newVal = { $set: { isPublic: false } };
-    const options = { returnOriginal: false };
     await dbClient.db.collection('files')
-      .findOneAndUpdate({ _id: new ObjectId(id), userId: user._id }, newVal, options, (err, file) => {
+      .findOneAndUpdate({
+        _id: new ObjectId(id),
+        userId: user._id,
+      }, newVal, options, (err, file) => {
         if (!file.lastErrorObject.updatedExisting) {
           res.status(404).json({ error: 'Not found' });
         }
