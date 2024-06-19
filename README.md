@@ -37,3 +37,9 @@
     * [Utility](utils/)
     * [Files Controller](controllers/FilesController.js)
     * [Worker](worker.js)
+    
+* **[10. Tests!](tests/)**
+* **11. New user - welcome email**
+    * [Utility](utils/)
+    * [Users Controller](controllers/UsersController.js)
+    * [Worker](worker.js)

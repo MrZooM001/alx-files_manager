@@ -5,16 +5,33 @@ import { ObjectId } from 'mongodb';
 import { dbClient } from './utils/db';
 
 const fileQueue = new Bull('fileQueue');
+const userQueue = new Bull('userQueue');
 
-fileQueue.process(async (job) => {
+userQueue.process(async (job, done) => {
+  const { userId } = job.data;
+  if (!userId) {
+    done(new Error('Missing userId'));
+  }
+
+  const user = await dbClient.db.collection('users')
+    .findOne({ _id: new ObjectId(userId) });
+
+  if (!user) {
+    done(new Error('User not found'));
+  }
+
+  console.log(`Welcome ${user.email}!`);
+});
+
+fileQueue.process(async (job, done) => {
   const { userId, fileId } = job.data;
 
   if (!fileId) {
-    throw new Error('Missing fileId');
+    done(new Error('Missing fileId'));
   }
 
   if (!userId) {
-    throw new Error('Missing userId');
+    done(new Error('Missing userId'));
   }
 
   const file = await dbClient.db.collection('files').findOne({
@@ -23,11 +40,11 @@ fileQueue.process(async (job) => {
   });
 
   if (!file) {
-    throw new Error('File not found');
+    done(new Error('File not found'));
   }
 
   if (file.type !== 'image') {
-    throw new Error('File is not an image');
+    done(new Error('File is not an image'));
   }
 
   const originalPath = file.localPath;
