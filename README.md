@@ -17,3 +17,12 @@
     * [Routes](routes/index.js)
     * [Users Controller](controllers/UsersController.js)
     * [Auth Controller](controllers/AuthController.js)
+* **5. First file**
+    * [Utility](utils/)
+    * [Routes](routes/index.js)
+    * [Files Controller](controllers/FilesController.js)
+* **6. Get and list file**
+    * [Utility](utils/)
+    * [Routes](routes/index.js)
+    * [Files Controller](controllers/FilesController.js)
+

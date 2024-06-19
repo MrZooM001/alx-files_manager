@@ -41,7 +41,7 @@ class FilesController {
       return;
     }
 
-    if (!type || !VALID_TYPES.includes(type)) {
+    if (!type && !VALID_TYPES.includes(type)) {
       res.status(400).json({ error: 'Missing type' });
       return;
     }
@@ -53,7 +53,7 @@ class FilesController {
 
     if (parentId instanceof Set) {
       const parentFolder = await dbClient.db.collection('files')
-        .findOne({ _id: new ObjectId(parentId) });
+        .findOne({ _id: new ObjectId(parentId), userId: user._id });
       if (!parentFolder) {
         res.status(400).json({ error: 'Parent not found' });
         return;
@@ -66,28 +66,113 @@ class FilesController {
     }
 
     const fileDocument = {
-      userId,
+      userId: user._id,
       name,
       type,
       isPublic,
-      parentId: parentId !== 0 ? new ObjectId(parentId) : 0,
+      parentId: parentId || 0,
     };
 
     if (type === VALID_TYPES[0]) {
-      const result = await dbClient.db.collection('files').insertOne(fileDocument);
-      res.status(201).json({ id: result.insertedId, ...fileDocument });
+      await dbClient.db.collection('files').insertOne(fileDocument)
+        .then((result) => {
+          res.status(201).json({
+            id: result.insertedId,
+            ...fileDocument,
+          }).catch((err) => {
+            console.error(err);
+          });
+        });
+    } else {
+      const filePath = path.join(FOLDER_PATH, uuid4());
+      const buffer = Buffer.from(data, 'base64');
+
+      await fs.mkdir(FOLDER_PATH, { recursive: true });
+      await fs.writeFile(filePath, buffer);
+
+      await dbClient.db.collection('files').insertOne({
+        ...fileDocument,
+        localPath: filePath,
+      }).then((result) => {
+        res.status(201).json({ id: result.insertedId, ...fileDocument });
+      });
+    }
+  }
+
+  static async getShow(req, res) {
+    const token = req.headers['x-token'];
+    if (!token) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
 
-    await fs.mkdir(FOLDER_PATH, { recursive: true });
+    const key = `auth_${token}`;
 
-    const filePath = path.join(FOLDER_PATH, uuid4());
-    const buffer = Buffer.from(data, 'base64');
-    await fs.writeFile(filePath, buffer);
+    const userId = await redisClient.get(key);
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-    fileDocument.localPath = filePath;
+    const user = await dbClient.db.collection('users')
+      .findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-    const result = await dbClient.db.collection('files').insertOne(fileDocument);
-    res.status(201).json({ id: result.insertedId, ...fileDocument });
+    const fileId = req.params.id;
+
+    const file = await dbClient.db.collection('files')
+      .findOne({ _id: fileId, userId: user._id });
+    if (!file) {
+      res.status(404).json({ error: 'Not found' });
+      return;
+    }
+    res.status(200).json(file);
+  }
+
+  static async getIndex(req, res) {
+    const token = req.headers['x-token'];
+    if (!token) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const key = `auth_${token}`;
+
+    const userId = await redisClient.get(key);
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const user = await dbClient.db.collection('users')
+      .findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { parentId = 0, page = 0 } = req.query;
+    const limit = 20;
+    const skip = page * limit;
+
+    const matchQuery = {
+      userId: user._id,
+      parentId: parentId !== 0 ? new ObjectId(parentId) : 0,
+    };
+
+    const files = await dbClient.db.collection('files')
+      .aggregate(
+        {
+          $match: matchQuery,
+        },
+        { $skip: skip },
+        { $limit: limit },
+      ).toArray();
+
+    res.status(200).json(files);
   }
 }
 
