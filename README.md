@@ -25,4 +25,8 @@
     * [Utility](utils/)
     * [Routes](routes/index.js)
     * [Files Controller](controllers/FilesController.js)
+* **7. File publish/unpublish**
+    * [Utility](utils/)
+    * [Routes](routes/index.js)
+    * [Files Controller](controllers/FilesController.js)
 

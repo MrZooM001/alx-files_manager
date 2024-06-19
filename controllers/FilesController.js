@@ -174,6 +174,98 @@ class FilesController {
 
     res.status(200).json(files);
   }
+
+  static async putPublish(req, res) {
+    const token = req.headers['x-token'];
+    if (!token) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const key = `auth_${token}`;
+
+    const userId = await redisClient.get(key);
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const user = await dbClient.db.collection('users')
+      .findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const parentFolder = await dbClient.db.collection('files')
+      .findOne({ _id: new ObjectId(parentId), userId: user._id });
+    if (!parentFolder) {
+      res.status(400).json({ error: 'Parent not found' });
+      return;
+    }
+
+    if (parentFolder.type !== VALID_TYPES[0]) {
+      res.status(400).json({ error: 'Parent is not a folder' });
+      return;
+    }
+
+    const { id } = req.params;
+    const newVal = { $set: { isPublic: true } };
+    const options = { returnOriginal: false };
+    await dbClient.db.collection('files')
+      .findOneAndUpdate({ _id: new ObjectId(id), userId: user._id }, newVal, options, (err, file) => {
+        if (!file.lastErrorObject.updatedExisting) {
+          res.status(404).json({ error: 'Not found' });
+        }
+        res.status(200).json(file.value);
+      });
+  }
+
+  static async putUnpublish(req, res) {
+    const token = req.headers['x-token'];
+    if (!token) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const key = `auth_${token}`;
+
+    const userId = await redisClient.get(key);
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const user = await dbClient.db.collection('users')
+      .findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const parentFolder = await dbClient.db.collection('files')
+      .findOne({ _id: new ObjectId(parentId), userId: user._id });
+    if (!parentFolder) {
+      res.status(400).json({ error: 'Parent not found' });
+      return;
+    }
+
+    if (parentFolder.type !== VALID_TYPES[0]) {
+      res.status(400).json({ error: 'Parent is not a folder' });
+      return;
+    }
+
+    const { id } = req.params;
+    const newVal = { $set: { isPublic: false } };
+    const options = { returnOriginal: false };
+    await dbClient.db.collection('files')
+      .findOneAndUpdate({ _id: new ObjectId(id), userId: user._id }, newVal, options, (err, file) => {
+        if (!file.lastErrorObject.updatedExisting) {
+          res.status(404).json({ error: 'Not found' });
+        }
+        res.status(200).json(file.value);
+      });
+  }
 }
 
 export default FilesController;
