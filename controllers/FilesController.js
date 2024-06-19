@@ -34,7 +34,7 @@ class FilesController {
       return res.status(400).json({ error: 'Missing name' });
     }
 
-    if (!type && !VALID_TYPES.includes(type)) {
+    if (!type || !VALID_TYPES.includes(type)) {
       return res.status(400).json({ error: 'Missing type' });
     }
 
