@@ -3,12 +3,15 @@ import path from 'path';
 import { v4 as uuid4 } from 'uuid';
 import { env } from 'process';
 import mime from 'mime-types';
+import Bull from 'bull';
 import { ObjectId } from 'mongodb';
 import { dbClient } from '../utils/db';
 import { redisClient } from '../utils/redis';
 
 const VALID_TYPES = ['folder', 'file', 'image'];
 const FOLDER_PATH = env.FOLDER_PATH || '/tmp/files_manager/';
+
+const fileQueue = new Bull('fileQueue', 'redis://127.0.0.1:6379');
 
 class FilesController {
   static async postUpload(req, res) {
@@ -31,7 +34,7 @@ class FilesController {
       return res.status(400).json({ error: 'Missing name' });
     }
 
-    if (!type || !VALID_TYPES.includes(type)) {
+    if (!type && !VALID_TYPES.includes(type)) {
       return res.status(400).json({ error: 'Missing type' });
     }
 
@@ -75,7 +78,15 @@ class FilesController {
 
     const result = await dbClient.db.collection('files').insertOne(fileDocument);
 
-    return res.status(201).json({ id: result.insertedId, ...fileDocument });
+    const fileId = result.insertedId;
+    if (type === VALID_TYPES[2]) {
+      await fileQueue.add({
+        userId: new ObjectId(userId).toString(),
+        fileId: fileId.toString(),
+      });
+    }
+
+    return res.status(201).json({ id: fileId, ...fileDocument });
   }
 
   static async getShow(req, res) {
@@ -208,6 +219,7 @@ class FilesController {
   static async getFile(req, res) {
     const token = req.headers['x-token'];
     const fileId = req.params.id;
+    const { size } = parseInt(req.query, 10);
 
     try {
       const file = await dbClient.db.collection('files')
@@ -233,6 +245,18 @@ class FilesController {
       }
 
       if (!file.localPath) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+
+      let filePath = file.localPath;
+
+      if (size === 500 || size === 250 || size === 100) {
+        filePath = `${file.localPath}_${size}`;
+      }
+
+      try {
+        await fs.access(filePath);
+      } catch (error) {
         return res.status(404).json({ error: 'Not found' });
       }
 
