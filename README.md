@@ -29,4 +29,11 @@
     * [Utility](utils/)
     * [Routes](routes/index.js)
     * [Files Controller](controllers/FilesController.js)
-
+* **8. File data**
+    * [Utility](utils/)
+    * [Routes](routes/index.js)
+    * [Files Controller](controllers/FilesController.js)
+* **9. Image Thumbnails**
+    * [Utility](utils/)
+    * [Files Controller](controllers/FilesController.js)
+    * [Worker](worker.js)
