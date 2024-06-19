@@ -1,6 +1,8 @@
 import Bull from 'bull';
-import dbClient from './utils/db.js';
 import imageThumbnail from 'image-thumbnail';
+import { promises as fs } from 'fs';
+import { ObjectId } from 'mongodb';
+import { dbClient } from './utils/db';
 
 const fileQueue = new Bull('fileQueue');
 
@@ -35,7 +37,7 @@ fileQueue.process(async (job) => {
     const thumbPath = `${originalPath}_${size}`;
 
     try {
-      const thumbBuffer = await imageThumbnail(createReadStream(originalPath), { width: size });
+      const thumbBuffer = await imageThumbnail(fs.createReadStream(originalPath), { width: size });
       await fs.writeFile(thumbPath, thumbBuffer);
     } catch (err) {
       console.error(`Error generating thumbnail for size ${size}: ${err}`);
